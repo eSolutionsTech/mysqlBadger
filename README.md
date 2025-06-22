@@ -3,7 +3,7 @@
   
   # 🦡 MySQL Badger
   
-  **A powerful MySQL slow query log analyzer with comprehensive HTML reports**
+  **A powerful MySQL slow query log analyzer with HTML reports**
   
   [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
   [![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
@@ -19,7 +19,7 @@ MySQL Badger is a comprehensive tool for analyzing MySQL slow query logs, inspir
 
 ### ✨ Key Features
 
-- 📊 **Comprehensive Statistics** - Real mathematical calculations (min, max, mean, median, 95th percentile, standard deviation)
+- 📊 **Query Statistics** - (min, max, mean, median, 95th percentile, standard deviation)
 - 📈 **Interactive Charts** - Query frequency and execution time trends over time
 - 🔍 **Query Analysis** - Normalized queries with detailed execution patterns
 - 📋 **Detailed Breakdowns** - Lock time, rows sent/examined, query size analysis
@@ -33,7 +33,7 @@ MySQL Badger is a comprehensive tool for analyzing MySQL slow query logs, inspir
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/mysqlBadger.git
+git clone https://github.com/eSolutionsTech/mysqlBadger.git
 cd mysqlBadger
 
 # Install the CLI tool
@@ -128,7 +128,8 @@ Test coverage includes:
 
 ```bash
 # Clone and setup
-git clone https://github.com/yourusername/mysqlBadger.git
+git clone https://github.com/eSolutionsTech/mysqlBadger.git
+
 cd mysqlBadger/packages/mysql_badger_cli
 
 # Create virtual environment
@@ -208,12 +209,12 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 ## 📞 Support
 
 - **Documentation**: Check this README and inline code comments
-- **Issues**: [GitHub Issues](https://github.com/yourusername/mysqlBadger/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/mysqlBadger/discussions)
+- **Issues**: [GitHub Issues](https://github.com/eSolutionsTech/mysqlBadger/issues)
+
 
 ---
 
 <div align="center">
   <sub>Built by <a href="https://esolutions.tech">eSolutions.tech</a> | 
-  Explore our other <a href="https://github.com/esolutions-tech">open-source projects</a></sub>
+  Explore our other <a href="https://github.com/eSolutionsTech">open-source projects</a></sub>
 </div> 
