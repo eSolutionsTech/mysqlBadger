@@ -42,9 +42,8 @@ report.html
 
 # Development planning files
 percona_report.txt
-plan.md
-plan_initial.md
-plan_atribute_stats.md
+plan*.md
+
 
 # Keep assets/images for documentation
 !assets/
