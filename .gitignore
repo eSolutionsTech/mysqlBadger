@@ -1,0 +1,55 @@
+# Python virtual environment
+.venv/
+venv/
+ENV/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# IDE settings
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment variables
+.env
+.env.local
+
+# Logs
+mysql-slow.log
+logs/
+
+# Test cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# System files
+.DS_Store
+Thumbs.db 
+
+# Generated reports (keep examples)
+mysql-report.html
+report.html
+
+# Development planning files
+percona_report.txt
+plan.md
+plan_initial.md
+plan_atribute_stats.md
+
+# Keep assets/images for documentation
+!assets/
+!assets/images/
+!assets/images/*.png
+!assets/images/*.jpg
+!assets/images/*.svg
+

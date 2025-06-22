@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MySQL Badger Report</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        h1, h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 0;
+            border-bottom: 2px solid #3498db;
+            margin-bottom: 30px;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .logo {
+            width: 60px;
+            height: 60px;
+        }
+        .title {
+            font-size: 2.5em;
+            color: #2c3e50;
+            margin: 0;
+        }
+        .title .mysql-part {
+            color: #3498db;
+        }
+        .header-right {
+            text-align: right;
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+        .header-right .log-info {
+            margin-bottom: 5px;
+        }
+        .header-right .generated-info {
+            font-style: italic;
+        }
+        h2 {
+            font-size: 1.8em;
+            margin-top: 40px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: #fff;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #29384d;
+        }
+        tr:hover {
+            background-color: #eaf5ff;
+        }
+        .summary {
+            display: flex;
+            justify-content: space-around;
+            padding: 20px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+            margin-bottom: 30px;
+        }
+        .summary-item {
+            text-align: center;
+        }
+        .summary-item .value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2980b9;
+        }
+        .summary-item .label {
+            font-size: 1em;
+            color: #7f8c8d;
+        }
+        .query {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .details-btn {
+            background-color: #3498db;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        .details-btn:hover {
+            background-color: #2980b9;
+        }
+        .details-row > td {
+            background-color: #fdfdfd !important;
+            padding: 10px;
+        }
+        .details-container {
+            border-left: 3px solid #3498db;
+            padding-left: 15px;
+        }
+        .query-example {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .query-example:last-child {
+            border-bottom: none;
+        }
+        .query-example p {
+            margin: 5px 0;
+        }
+        .query-info {
+            margin-bottom: 10px;
+            background-color: #f8f9fa;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        .query-info-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 4px 0;
+        }
+        .query-info-row:not(:last-child) {
+            border-bottom: 1px solid #e9ecef;
+            margin-bottom: 4px;
+        }
+        .query-info span {
+            white-space: nowrap;
+        }
+        .query-time-distribution {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+            display: flex;
+            gap: 0px;
+        }
+        .distribution-left {
+            flex: 1;
+        }
+        .distribution-right {
+            flex: 1;
+            border-left: 1px solid #34495e;
+            padding-left: 20px;
+        }
+        .stats-section {
+            margin-bottom: 15px;
+        }
+        .variance-ratio {
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            color: #ecf0f1;
+            font-weight: bold;
+        }
+        .variance-ratio .label {
+            color: #ecf0f1;
+        }
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85em;
+            font-family: monospace;
+            margin-top: 10px;
+        }
+        .stats-table th {
+            padding: 5px 8px;
+            text-align: right;
+            border: none;
+            color: #d5dbdb;
+            font-weight: bold;
+            border-bottom: 1px solid #34495e;
+            background-color: transparent;
+        }
+        .stats-table th:first-child {
+            text-align: left;
+        }
+        .stats-table td {
+            padding: 3px 8px;
+            text-align: right;
+            border: none;
+            color: #ecf0f1;
+            background-color: transparent;
+        }
+        .stats-table td:first-child {
+            text-align: left;
+        }
+        .stats-table tr:hover {
+            background-color: #090e12;
+        }
+        .stats-table tr:hover td {
+            background-color: rgba(27, 186, 178, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <svg width="60" height="41" viewBox="0 0 190 129" class="logo" xmlns="http://www.w3.org/2000/svg">
+                    <g transform="translate(0.000000,129.000000) scale(0.100000,-0.100000)" fill="#2c3e50" stroke="none">
+                        <path d="M1260 1200 c-16 -16 -25 -18 -45 -10 -42 16 -83 12 -106 -11 -18 -18
+                        -21 -30 -17 -75 l5 -54 -171 -174 c-163 -165 -178 -177 -308 -255 -76 -45
+                        -140 -86 -143 -91 -4 -6 -72 -11 -153 -11 -117 -2 -135 -3 -87 -9 33 -4 90 -8
+                        128 -9 37 -1 67 -5 67 -9 0 -5 -12 -20 -28 -35 -26 -25 -33 -26 -175 -33 -81
+                        -4 -145 -9 -142 -12 3 -3 63 -11 133 -17 l127 -10 -2 -29 c-1 -16 -3 -30 -5
+                        -32 -2 -1 -55 -6 -118 -11 l-115 -7 105 -12 c58 -7 108 -13 112 -13 4 -1 1
+                        -22 -7 -48 -18 -62 -76 -115 -147 -135 l-53 -15 39 -13 c47 -15 131 -8 176 15
+                        31 16 32 16 55 -9 l24 -26 206 0 c204 0 206 0 195 20 -14 26 -50 40 -101 40
+                        -27 0 -38 4 -33 11 4 7 29 10 65 7 50 -4 64 -9 92 -36 28 -28 40 -32 85 -32
+                        29 0 52 4 52 9 0 5 -16 23 -35 40 l-36 31 26 10 c35 13 29 15 88 -32 95 -75
+                        145 -92 285 -96 87 -3 122 -1 122 7 0 23 -49 61 -94 72 -24 6 -52 19 -61 29
+                        -20 22 -44 86 -45 119 0 22 3 23 38 16 56 -10 122 -50 219 -132 l87 -73 93 0
+                        c51 0 93 3 93 8 0 21 -35 52 -77 68 -27 10 -56 23 -66 29 -35 24 -111 132
+                        -154 221 -71 145 -70 236 3 293 25 20 38 21 163 19 129 -3 139 -2 186 22 33
+                        17 57 38 70 63 18 34 19 38 3 53 -9 9 -47 33 -85 53 -48 27 -82 54 -116 97
+                        -57 71 -137 127 -215 150 -31 10 -68 28 -82 40 -55 48 -89 55 -120 24z"/>
+                        <path d="M750 960 c0 -189 1 -200 18 -191 9 5 26 19 37 31 18 20 20 38 22 191
+                        l2 169 -39 0 -40 0 0 -200z" fill="#3498db"/>
+                        <path d="M640 825 c0 -74 3 -135 8 -135 6 0 43 22 61 37 3 2 6 55 8 118 l3
+                        115 -40 0 -40 0 0 -135z" fill="#3498db"/>
+                        <path d="M530 770 c0 -141 1 -143 54 -118 25 11 26 12 25 130 l-2 118 -38 0
+                        -39 0 0 -130z" fill="#3498db"/>
+                        <path d="M432 713 c3 -57 3 -58 36 -61 l32 -3 0 60 0 61 -35 0 -36 0 3 -57z" fill="#3498db"/>
+                    </g>
+                </svg>
+                <h1 class="title"><span class="mysql-part">mysql</span>Badger</h1>
+            </div>
+            <div class="header-right">
+                <div class="log-info">Log analyzed: sample-slow.log</div>
+                <div class="generated-info">Generated at: 2025-06-22 17:17:18</div>
+            </div>
+        </div>
+
+        <div class="summary">
+            <div class="summary-item">
+                <div class="value">3</div>
+                <div class="label">Total Queries Analyzed</div>
+            </div>
+            <div class="summary-item">
+                <div class="value">4.97s</div>
+                <div class="label">Total Query Time</div>
+            </div>
+             <div class="summary-item">
+                <div class="value">2</div>
+                <div class="label">Unique Queries</div>
+            </div>
+            <div class="summary-item">
+                <div class="value" style="font-size: 1.2em; white-space: nowrap;">2024-06-15 10:00:00<br>to<br>2024-06-15 10:02:00</div>
+                <div class="label">Time Window</div>
+            </div>
+        </div>
+
+        <h2>Queries over Time</h2>
+        <div style="width: 100%; margin: auto;">
+            <canvas id="qpsChart"></canvas>
+        </div>
+
+        <h2>Average Query Time Evolution</h2>
+        <div style="width: 100%; margin: auto;">
+            <canvas id="avgTimeChart"></canvas>
+        </div>
+
+        <h2>Top 2 Queries by Total Time</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Query</th>
+                    <th>Count</th>
+                    <th>Total Time (s)</th>
+                    <th>Mean Time (s)</th>
+                    <th>Max Time (s)</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+                <tr>
+                    <td class="query">select * from users u join orders o on u.id = o.user_id where u.signup_date < 'S';</td>
+                    <td>1</td>
+                    <td>2.5000</td>
+                    <td>2.5000</td>
+                    <td>2.5000</td>
+                    <td><button class="details-btn" onclick="toggleDetails('details-1')">More Info</button></td>
+                </tr>
+                <tr id="details-1" class="details-row" style="display: none;">
+                    <td colspan="6">
+                        <div class="details-container">
+                            <div class="query-time-distribution">
+                                <div class="distribution-left">
+                                    <pre># Query_time distribution
+#    1us
+#   10us
+#  100us
+#    1ms
+#   10ms
+#  100ms
+#     1s ##################################################
+#   10s+</pre>
+                                </div>
+                                <div class="distribution-right">
+                                    <div class="variance-ratio">
+                                        <span class="label">Variance-to-mean ratio:</span> 0.00
+                                    </div>
+                                    
+                                    <table class="stats-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Attribute</th>
+                                                <th>%</th>
+                                                <th>total</th>
+                                                <th>min</th>
+                                                <th>max</th>
+                                                <th>avg</th>
+                                                <th>95%</th>
+                                                <th>stddev</th>
+                                                <th>median</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            
+                                            <tr>
+                                                <td>Count</td>
+                                                <td>33.3</td>
+                                                <td>1</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                            </tr>
+                                            
+                                            <tr>
+                                                <td>Exec Time</td>
+                                                <td>50.3</td>
+                                                <td>2.500s</td>
+                                                <td>2.500s</td>
+                                                <td>2.500s</td>
+                                                <td>2.500s</td>
+                                                <td>2.500s</td>
+                                                <td>0.000s</td>
+                                                <td>2.500s</td>
+                                            </tr>
+                                            
+                                            <tr>
+                                                <td>Lock Time</td>
+                                                <td>50.0</td>
+                                                <td>0.002000s</td>
+                                                <td>0.002000s</td>
+                                                <td>0.002000s</td>
+                                                <td>0.002000s</td>
+                                                <td>0.002000s</td>
+                                                <td>0.000000s</td>
+                                                <td>0.002000s</td>
+                                            </tr>
+                                            
+                                            <tr>
+                                                <td>Rows Sent</td>
+                                                <td>20.0</td>
+                                                <td>5</td>
+                                                <td>5</td>
+                                                <td>5</td>
+                                                <td>5</td>
+                                                <td>5</td>
+                                                <td>0</td>
+                                                <td>5</td>
+                                            </tr>
+                                            
+                                            <tr>
+                                                <td>Rows Examined</td>
+                                                <td>55.6</td>
+                                                <td>50.0k</td>
+                                                <td>50.0k</td>
+                                                <td>50.0k</td>
+                                                <td>50.0k</td>
+                                                <td>50.0k</td>
+                                                <td>0</td>
+                                                <td>50.0k</td>
+                                            </tr>
+                                            
+                                            <tr>
+                                                <td>Query Size</td>
+                                                <td>0.0</td>
+                                                <td>91</td>
+                                                <td>91</td>
+                                                <td>91</td>
+                                                <td>91</td>
+                                                <td>91</td>
+                                                <td>0</td>
+                                                <td>91</td>
+                                            </tr>
+                                            
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <h4>Query Examples</h4>
+                            
+                                <div class="query-example">
+                                    <div class="query-info">
+                                        <div class="query-info-row">
+                                            <span><strong>Timestamp:</strong> 2024-06-15 10:01:00</span>
+                                            <span><strong>User:</strong> root</span>
+                                            <span><strong>Host:</strong> localhost</span>
+                                        </div>
+                                        <div class="query-info-row">
+                                            <span><strong>Query Time:</strong> 2.5000s</span>
+                                            <span><strong>Lock Time:</strong> 0.0020s</span>
+                                            <span><strong>Rows Sent:</strong> 5</span>
+                                            <span><strong>Rows Examined:</strong> 50000</span>
+                                        </div>
+                                    </div>
+                                    <pre class="query">SELECT * FROM users u JOIN orders o ON u.id = o.user_id WHERE u.signup_date < '2023-01-01';</pre>
+                                </div>
+                            
+                        </div>
+                    </td>
+                </tr>
+                
+                <tr>
+                    <td class="query">select * from products where category = 'S' and price > N;</td>
+                    <td>2</td>
+                    <td>2.4690</td>
+                    <td>1.2345</td>
+                    <td>1.2350</td>
+                    <td><button class="details-btn" onclick="toggleDetails('details-2')">More Info</button></td>
+                </tr>
+                <tr id="details-2" class="details-row" style="display: none;">
+                    <td colspan="6">
+                        <div class="details-container">
+                            <div class="query-time-distribution">
+                                <div class="distribution-left">
+                                    <pre># Query_time distribution
+#    1us
+#   10us
+#  100us
+#    1ms
+#   10ms
+#  100ms
+#     1s ##################################################
+#   10s+</pre>
+                                </div>
+                                <div class="distribution-right">
+                                    <div class="variance-ratio">
+                                        <span class="label">Variance-to-mean ratio:</span> 0.00
+                                    </div>
+                                    
+                                    <table class="stats-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Attribute</th>
+                                                <th>%</th>
+                                                <th>total</th>
+                                                <th>min</th>
+                                                <th>max</th>
+                                                <th>avg</th>
+                                                <th>95%</th>
+                                                <th>stddev</th>
+                                                <th>median</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            
+                                            <tr>
+                                                <td>Count</td>
+                                                <td>66.7</td>
+                                                <td>2</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                            </tr>
+                                            
+                                            <tr>
+                                                <td>Exec Time</td>
+                                                <td>49.7</td>
+                                                <td>2.469s</td>
+                                                <td>1.234s</td>
+                                                <td>1.235s</td>
+                                                <td>1.235s</td>
+                                                <td>1.235s</td>
+                                                <td>0.001s</td>
+                                                <td>1.235s</td>
+                                            </tr>
+                                            
+                                            <tr>
+                                                <td>Lock Time</td>
+                                                <td>50.0</td>
+                                                <td>0.002000s</td>
+                                                <td>0.001000s</td>
+                                                <td>0.001000s</td>
+                                                <td>0.001000s</td>
+                                                <td>0.001000s</td>
+                                                <td>0.000000s</td>
+                                                <td>0.001000s</td>
+                                            </tr>
+                                            
+                                            <tr>
+                                                <td>Rows Sent</td>
+                                                <td>80.0</td>
+                                                <td>20</td>
+                                                <td>10</td>
+                                                <td>10</td>
+                                                <td>10</td>
+                                                <td>10</td>
+                                                <td>0</td>
+                                                <td>10</td>
+                                            </tr>
+                                            
+                                            <tr>
+                                                <td>Rows Examined</td>
+                                                <td>44.4</td>
+                                                <td>40.0k</td>
+                                                <td>20.0k</td>
+                                                <td>20.0k</td>
+                                                <td>20.0k</td>
+                                                <td>20.0k</td>
+                                                <td>0</td>
+                                                <td>20.0k</td>
+                                            </tr>
+                                            
+                                            <tr>
+                                                <td>Query Size</td>
+                                                <td>0.0</td>
+                                                <td>134</td>
+                                                <td>67</td>
+                                                <td>67</td>
+                                                <td>67</td>
+                                                <td>67</td>
+                                                <td>0</td>
+                                                <td>67</td>
+                                            </tr>
+                                            
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <h4>Query Examples</h4>
+                            
+                                <div class="query-example">
+                                    <div class="query-info">
+                                        <div class="query-info-row">
+                                            <span><strong>Timestamp:</strong> 2024-06-15 10:00:00</span>
+                                            <span><strong>User:</strong> root</span>
+                                            <span><strong>Host:</strong> localhost</span>
+                                        </div>
+                                        <div class="query-info-row">
+                                            <span><strong>Query Time:</strong> 1.2340s</span>
+                                            <span><strong>Lock Time:</strong> 0.0010s</span>
+                                            <span><strong>Rows Sent:</strong> 10</span>
+                                            <span><strong>Rows Examined:</strong> 20000</span>
+                                        </div>
+                                    </div>
+                                    <pre class="query">SELECT * FROM products WHERE category = 'fashion' AND price > 1000;</pre>
+                                </div>
+                            
+                                <div class="query-example">
+                                    <div class="query-info">
+                                        <div class="query-info-row">
+                                            <span><strong>Timestamp:</strong> 2024-06-15 10:02:00</span>
+                                            <span><strong>User:</strong> app</span>
+                                            <span><strong>Host:</strong> db.example.com</span>
+                                        </div>
+                                        <div class="query-info-row">
+                                            <span><strong>Query Time:</strong> 1.2350s</span>
+                                            <span><strong>Lock Time:</strong> 0.0010s</span>
+                                            <span><strong>Rows Sent:</strong> 10</span>
+                                            <span><strong>Rows Examined:</strong> 20000</span>
+                                        </div>
+                                    </div>
+                                    <pre class="query">SELECT * FROM products WHERE category = 'fashion' AND price > 1000;</pre>
+                                </div>
+                            
+                        </div>
+                    </td>
+                </tr>
+                
+            </tbody>
+        </table>
+
+        <h2>Top 2 Queries by Frequency</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Query</th>
+                    <th>Count</th>
+                    <th>Total Time (s)</th>
+                    <th>Mean Time (s)</th>
+                    <th>Mean Rows Sent</th>
+                    <th>Mean Rows Examined</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+                <tr>
+                    <td class="query">select * from products where category = 'S' and price > N;</td>
+                    <td>2</td>
+                    <td>2.4690</td>
+                    <td>1.2345</td>
+                    <td>10.00</td>
+                    <td>20000.00</td>
+                    <td><button class="details-btn" onclick="toggleDetails('details-freq-1')">More Info</button></td>
+                </tr>
+                <tr id="details-freq-1" class="details-row" style="display: none;">
+                    <td colspan="7">
+                        <div class="details-container">
+                            <div class="query-time-distribution">
+                                <div class="distribution-left">
+                                    <pre># Query_time distribution
+#    1us
+#   10us
+#  100us
+#    1ms
+#   10ms
+#  100ms
+#     1s ##################################################
+#   10s+</pre>
+                                </div>
+                                <div class="distribution-right">
+                                    <div class="variance-ratio">
+                                        <span class="label">Variance-to-mean ratio:</span> 0.00
+                                    </div>
+                                    
+                                    <table class="stats-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Attribute</th>
+                                                <th>%</th>
+                                                <th>total</th>
+                                                <th>min</th>
+                                                <th>max</th>
+                                                <th>avg</th>
+                                                <th>95%</th>
+                                                <th>stddev</th>
+                                                <th>median</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            
+                                            <tr>
+                                                <td>Count</td>
+                                                <td>66.7</td>
+                                                <td>2</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                            </tr>
+                                            
+                                            <tr>
+                                                <td>Exec Time</td>
+                                                <td>49.7</td>
+                                                <td>2.469s</td>
+                                                <td>1.234s</td>
+                                                <td>1.235s</td>
+                                                <td>1.235s</td>
+                                                <td>1.235s</td>
+                                                <td>0.001s</td>
+                                                <td>1.235s</td>
+                                            </tr>
+                                            
+                                            <tr>
+                                                <td>Lock Time</td>
+                                                <td>50.0</td>
+                                                <td>0.002000s</td>
+                                                <td>0.001000s</td>
+                                                <td>0.001000s</td>
+                                                <td>0.001000s</td>
+                                                <td>0.001000s</td>
+                                                <td>0.000000s</td>
+                                                <td>0.001000s</td>
+                                            </tr>
+                                            
+                                            <tr>
+                                                <td>Rows Sent</td>
+                                                <td>80.0</td>
+                                                <td>20</td>
+                                                <td>10</td>
+                                                <td>10</td>
+                                                <td>10</td>
+                                                <td>10</td>
+                                                <td>0</td>
+                                                <td>10</td>
+                                            </tr>
+                                            
+                                            <tr>
+                                                <td>Rows Examined</td>
+                                                <td>44.4</td>
+                                                <td>40.0k</td>
+                                                <td>20.0k</td>
+                                                <td>20.0k</td>
+                                                <td>20.0k</td>
+                                                <td>20.0k</td>
+                                                <td>0</td>
+                                                <td>20.0k</td>
+                                            </tr>
+                                            
+                                            <tr>
+                                                <td>Query Size</td>
+                                                <td>0.0</td>
+                                                <td>134</td>
+                                                <td>67</td>
+                                                <td>67</td>
+                                                <td>67</td>
+                                                <td>67</td>
+                                                <td>0</td>
+                                                <td>67</td>
+                                            </tr>
+                                            
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <h4>Query Examples</h4>
+                            
+                                <div class="query-example">
+                                    <div class="query-info">
+                                        <div class="query-info-row">
+                                            <span><strong>Timestamp:</strong> 2024-06-15 10:00:00</span>
+                                            <span><strong>User:</strong> root</span>
+                                            <span><strong>Host:</strong> localhost</span>
+                                        </div>
+                                        <div class="query-info-row">
+                                            <span><strong>Query Time:</strong> 1.2340s</span>
+                                            <span><strong>Lock Time:</strong> 0.0010s</span>
+                                            <span><strong>Rows Sent:</strong> 10</span>
+                                            <span><strong>Rows Examined:</strong> 20000</span>
+                                        </div>
+                                    </div>
+                                    <pre class="query">SELECT * FROM products WHERE category = 'fashion' AND price > 1000;</pre>
+                                </div>
+                            
+                                <div class="query-example">
+                                    <div class="query-info">
+                                        <div class="query-info-row">
+                                            <span><strong>Timestamp:</strong> 2024-06-15 10:02:00</span>
+                                            <span><strong>User:</strong> app</span>
+                                            <span><strong>Host:</strong> db.example.com</span>
+                                        </div>
+                                        <div class="query-info-row">
+                                            <span><strong>Query Time:</strong> 1.2350s</span>
+                                            <span><strong>Lock Time:</strong> 0.0010s</span>
+                                            <span><strong>Rows Sent:</strong> 10</span>
+                                            <span><strong>Rows Examined:</strong> 20000</span>
+                                        </div>
+                                    </div>
+                                    <pre class="query">SELECT * FROM products WHERE category = 'fashion' AND price > 1000;</pre>
+                                </div>
+                            
+                        </div>
+                    </td>
+                </tr>
+                
+                <tr>
+                    <td class="query">select * from users u join orders o on u.id = o.user_id where u.signup_date < 'S';</td>
+                    <td>1</td>
+                    <td>2.5000</td>
+                    <td>2.5000</td>
+                    <td>5.00</td>
+                    <td>50000.00</td>
+                    <td><button class="details-btn" onclick="toggleDetails('details-freq-2')">More Info</button></td>
+                </tr>
+                <tr id="details-freq-2" class="details-row" style="display: none;">
+                    <td colspan="7">
+                        <div class="details-container">
+                            <div class="query-time-distribution">
+                                <div class="distribution-left">
+                                    <pre># Query_time distribution
+#    1us
+#   10us
+#  100us
+#    1ms
+#   10ms
+#  100ms
+#     1s ##################################################
+#   10s+</pre>
+                                </div>
+                                <div class="distribution-right">
+                                    <div class="variance-ratio">
+                                        <span class="label">Variance-to-mean ratio:</span> 0.00
+                                    </div>
+                                    
+                                    <table class="stats-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Attribute</th>
+                                                <th>%</th>
+                                                <th>total</th>
+                                                <th>min</th>
+                                                <th>max</th>
+                                                <th>avg</th>
+                                                <th>95%</th>
+                                                <th>stddev</th>
+                                                <th>median</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            
+                                            <tr>
+                                                <td>Count</td>
+                                                <td>33.3</td>
+                                                <td>1</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                            </tr>
+                                            
+                                            <tr>
+                                                <td>Exec Time</td>
+                                                <td>50.3</td>
+                                                <td>2.500s</td>
+                                                <td>2.500s</td>
+                                                <td>2.500s</td>
+                                                <td>2.500s</td>
+                                                <td>2.500s</td>
+                                                <td>0.000s</td>
+                                                <td>2.500s</td>
+                                            </tr>
+                                            
+                                            <tr>
+                                                <td>Lock Time</td>
+                                                <td>50.0</td>
+                                                <td>0.002000s</td>
+                                                <td>0.002000s</td>
+                                                <td>0.002000s</td>
+                                                <td>0.002000s</td>
+                                                <td>0.002000s</td>
+                                                <td>0.000000s</td>
+                                                <td>0.002000s</td>
+                                            </tr>
+                                            
+                                            <tr>
+                                                <td>Rows Sent</td>
+                                                <td>20.0</td>
+                                                <td>5</td>
+                                                <td>5</td>
+                                                <td>5</td>
+                                                <td>5</td>
+                                                <td>5</td>
+                                                <td>0</td>
+                                                <td>5</td>
+                                            </tr>
+                                            
+                                            <tr>
+                                                <td>Rows Examined</td>
+                                                <td>55.6</td>
+                                                <td>50.0k</td>
+                                                <td>50.0k</td>
+                                                <td>50.0k</td>
+                                                <td>50.0k</td>
+                                                <td>50.0k</td>
+                                                <td>0</td>
+                                                <td>50.0k</td>
+                                            </tr>
+                                            
+                                            <tr>
+                                                <td>Query Size</td>
+                                                <td>0.0</td>
+                                                <td>91</td>
+                                                <td>91</td>
+                                                <td>91</td>
+                                                <td>91</td>
+                                                <td>91</td>
+                                                <td>0</td>
+                                                <td>91</td>
+                                            </tr>
+                                            
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <h4>Query Examples</h4>
+                            
+                                <div class="query-example">
+                                    <div class="query-info">
+                                        <div class="query-info-row">
+                                            <span><strong>Timestamp:</strong> 2024-06-15 10:01:00</span>
+                                            <span><strong>User:</strong> root</span>
+                                            <span><strong>Host:</strong> localhost</span>
+                                        </div>
+                                        <div class="query-info-row">
+                                            <span><strong>Query Time:</strong> 2.5000s</span>
+                                            <span><strong>Lock Time:</strong> 0.0020s</span>
+                                            <span><strong>Rows Sent:</strong> 5</span>
+                                            <span><strong>Rows Examined:</strong> 50000</span>
+                                        </div>
+                                    </div>
+                                    <pre class="query">SELECT * FROM users u JOIN orders o ON u.id = o.user_id WHERE u.signup_date < '2023-01-01';</pre>
+                                </div>
+                            
+                        </div>
+                    </td>
+                </tr>
+                
+            </tbody>
+        </table>
+    </div>
+    <script type="application/json" id="chart-data">
+        {
+            "qps": {"label": "Queries per Second", "labels": ["2024-06-15 10:00:00", "2024-06-15 10:00:01", "2024-06-15 10:00:02", "2024-06-15 10:00:03", "2024-06-15 10:00:04", "2024-06-15 10:00:05", "2024-06-15 10:00:06", "2024-06-15 10:00:07", "2024-06-15 10:00:08", "2024-06-15 10:00:09", "2024-06-15 10:00:10", "2024-06-15 10:00:11", "2024-06-15 10:00:12", "2024-06-15 10:00:13", "2024-06-15 10:00:14", "2024-06-15 10:00:15", "2024-06-15 10:00:16", "2024-06-15 10:00:17", "2024-06-15 10:00:18", "2024-06-15 10:00:19", "2024-06-15 10:00:20", "2024-06-15 10:00:21", "2024-06-15 10:00:22", "2024-06-15 10:00:23", "2024-06-15 10:00:24", "2024-06-15 10:00:25", "2024-06-15 10:00:26", "2024-06-15 10:00:27", "2024-06-15 10:00:28", "2024-06-15 10:00:29", "2024-06-15 10:00:30", "2024-06-15 10:00:31", "2024-06-15 10:00:32", "2024-06-15 10:00:33", "2024-06-15 10:00:34", "2024-06-15 10:00:35", "2024-06-15 10:00:36", "2024-06-15 10:00:37", "2024-06-15 10:00:38", "2024-06-15 10:00:39", "2024-06-15 10:00:40", "2024-06-15 10:00:41", "2024-06-15 10:00:42", "2024-06-15 10:00:43", "2024-06-15 10:00:44", "2024-06-15 10:00:45", "2024-06-15 10:00:46", "2024-06-15 10:00:47", "2024-06-15 10:00:48", "2024-06-15 10:00:49", "2024-06-15 10:00:50", "2024-06-15 10:00:51", "2024-06-15 10:00:52", "2024-06-15 10:00:53", "2024-06-15 10:00:54", "2024-06-15 10:00:55", "2024-06-15 10:00:56", "2024-06-15 10:00:57", "2024-06-15 10:00:58", "2024-06-15 10:00:59", "2024-06-15 10:01:00", "2024-06-15 10:01:01", "2024-06-15 10:01:02", "2024-06-15 10:01:03", "2024-06-15 10:01:04", "2024-06-15 10:01:05", "2024-06-15 10:01:06", "2024-06-15 10:01:07", "2024-06-15 10:01:08", "2024-06-15 10:01:09", "2024-06-15 10:01:10", "2024-06-15 10:01:11", "2024-06-15 10:01:12", "2024-06-15 10:01:13", "2024-06-15 10:01:14", "2024-06-15 10:01:15", "2024-06-15 10:01:16", "2024-06-15 10:01:17", "2024-06-15 10:01:18", "2024-06-15 10:01:19", "2024-06-15 10:01:20", "2024-06-15 10:01:21", "2024-06-15 10:01:22", "2024-06-15 10:01:23", "2024-06-15 10:01:24", "2024-06-15 10:01:25", "2024-06-15 10:01:26", "2024-06-15 10:01:27", "2024-06-15 10:01:28", "2024-06-15 10:01:29", "2024-06-15 10:01:30", "2024-06-15 10:01:31", "2024-06-15 10:01:32", "2024-06-15 10:01:33", "2024-06-15 10:01:34", "2024-06-15 10:01:35", "2024-06-15 10:01:36", "2024-06-15 10:01:37", "2024-06-15 10:01:38", "2024-06-15 10:01:39", "2024-06-15 10:01:40", "2024-06-15 10:01:41", "2024-06-15 10:01:42", "2024-06-15 10:01:43", "2024-06-15 10:01:44", "2024-06-15 10:01:45", "2024-06-15 10:01:46", "2024-06-15 10:01:47", "2024-06-15 10:01:48", "2024-06-15 10:01:49", "2024-06-15 10:01:50", "2024-06-15 10:01:51", "2024-06-15 10:01:52", "2024-06-15 10:01:53", "2024-06-15 10:01:54", "2024-06-15 10:01:55", "2024-06-15 10:01:56", "2024-06-15 10:01:57", "2024-06-15 10:01:58", "2024-06-15 10:01:59", "2024-06-15 10:02:00"], "values": [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]},
+            "avgTime": {"label": "Average Query Time", "labels": ["2024-06-15 10:00:00", "2024-06-15 10:00:01", "2024-06-15 10:00:02", "2024-06-15 10:00:03", "2024-06-15 10:00:04", "2024-06-15 10:00:05", "2024-06-15 10:00:06", "2024-06-15 10:00:07", "2024-06-15 10:00:08", "2024-06-15 10:00:09", "2024-06-15 10:00:10", "2024-06-15 10:00:11", "2024-06-15 10:00:12", "2024-06-15 10:00:13", "2024-06-15 10:00:14", "2024-06-15 10:00:15", "2024-06-15 10:00:16", "2024-06-15 10:00:17", "2024-06-15 10:00:18", "2024-06-15 10:00:19", "2024-06-15 10:00:20", "2024-06-15 10:00:21", "2024-06-15 10:00:22", "2024-06-15 10:00:23", "2024-06-15 10:00:24", "2024-06-15 10:00:25", "2024-06-15 10:00:26", "2024-06-15 10:00:27", "2024-06-15 10:00:28", "2024-06-15 10:00:29", "2024-06-15 10:00:30", "2024-06-15 10:00:31", "2024-06-15 10:00:32", "2024-06-15 10:00:33", "2024-06-15 10:00:34", "2024-06-15 10:00:35", "2024-06-15 10:00:36", "2024-06-15 10:00:37", "2024-06-15 10:00:38", "2024-06-15 10:00:39", "2024-06-15 10:00:40", "2024-06-15 10:00:41", "2024-06-15 10:00:42", "2024-06-15 10:00:43", "2024-06-15 10:00:44", "2024-06-15 10:00:45", "2024-06-15 10:00:46", "2024-06-15 10:00:47", "2024-06-15 10:00:48", "2024-06-15 10:00:49", "2024-06-15 10:00:50", "2024-06-15 10:00:51", "2024-06-15 10:00:52", "2024-06-15 10:00:53", "2024-06-15 10:00:54", "2024-06-15 10:00:55", "2024-06-15 10:00:56", "2024-06-15 10:00:57", "2024-06-15 10:00:58", "2024-06-15 10:00:59", "2024-06-15 10:01:00", "2024-06-15 10:01:01", "2024-06-15 10:01:02", "2024-06-15 10:01:03", "2024-06-15 10:01:04", "2024-06-15 10:01:05", "2024-06-15 10:01:06", "2024-06-15 10:01:07", "2024-06-15 10:01:08", "2024-06-15 10:01:09", "2024-06-15 10:01:10", "2024-06-15 10:01:11", "2024-06-15 10:01:12", "2024-06-15 10:01:13", "2024-06-15 10:01:14", "2024-06-15 10:01:15", "2024-06-15 10:01:16", "2024-06-15 10:01:17", "2024-06-15 10:01:18", "2024-06-15 10:01:19", "2024-06-15 10:01:20", "2024-06-15 10:01:21", "2024-06-15 10:01:22", "2024-06-15 10:01:23", "2024-06-15 10:01:24", "2024-06-15 10:01:25", "2024-06-15 10:01:26", "2024-06-15 10:01:27", "2024-06-15 10:01:28", "2024-06-15 10:01:29", "2024-06-15 10:01:30", "2024-06-15 10:01:31", "2024-06-15 10:01:32", "2024-06-15 10:01:33", "2024-06-15 10:01:34", "2024-06-15 10:01:35", "2024-06-15 10:01:36", "2024-06-15 10:01:37", "2024-06-15 10:01:38", "2024-06-15 10:01:39", "2024-06-15 10:01:40", "2024-06-15 10:01:41", "2024-06-15 10:01:42", "2024-06-15 10:01:43", "2024-06-15 10:01:44", "2024-06-15 10:01:45", "2024-06-15 10:01:46", "2024-06-15 10:01:47", "2024-06-15 10:01:48", "2024-06-15 10:01:49", "2024-06-15 10:01:50", "2024-06-15 10:01:51", "2024-06-15 10:01:52", "2024-06-15 10:01:53", "2024-06-15 10:01:54", "2024-06-15 10:01:55", "2024-06-15 10:01:56", "2024-06-15 10:01:57", "2024-06-15 10:01:58", "2024-06-15 10:01:59", "2024-06-15 10:02:00"], "values": [1.234, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.235]}
+        }
+    </script>
+    <script>
+        function toggleDetails(rowId) {
+            const row = document.getElementById(rowId);
+            if (row) {
+                row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+            }
+        }
+
+        // Load chart data
+        const chartData = JSON.parse(document.getElementById('chart-data').textContent);
+        const qpsData = chartData.qps;
+        const avgTimeData = chartData.avgTime;
+
+        // QPS Chart
+        const qpsCtx = document.getElementById('qpsChart');
+
+        if (qpsCtx && qpsData && qpsData.labels) {
+            new Chart(qpsCtx, {
+                type: 'line',
+                data: {
+                    labels: qpsData.labels,
+                    datasets: [{
+                        label: qpsData.label || 'Queries per Second',
+                        data: qpsData.values,
+                        backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        borderWidth: 1,
+                        fill: true,
+                        pointRadius: 2,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Queries'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                autoSkip: true,
+                                maxTicksLimit: 20
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Average Time Chart
+        const avgTimeCtx = document.getElementById('avgTimeChart');
+
+        if (avgTimeCtx && avgTimeData && avgTimeData.labels) {
+            new Chart(avgTimeCtx, {
+                type: 'line',
+                data: {
+                    labels: avgTimeData.labels,
+                    datasets: [{
+                        label: 'Average Query Time (s)',
+                        data: avgTimeData.values,
+                        backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                        borderColor: 'rgba(231, 76, 60, 1)',
+                        borderWidth: 1,
+                        fill: true,
+                        pointRadius: 2,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Average Query Time (s)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                autoSkip: true,
+                                maxTicksLimit: 20
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html> 

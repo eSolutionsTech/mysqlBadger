@@ -1,0 +1,100 @@
+/usr/sbin/mysqld, Version: 5.7.44-log (MySQL Community Server (GPL)). started with:
+Tcp port: 0  Unix socket: /var/lib/mysql/mysql.sock
+Time                 Id Command    Argument
+# Time: 2025-06-01T12:52:15.393216Z
+# User@Host: esolutio_baneasa[esolutio_baneasa] @ localhost []  Id:    10
+# Query_time: 0.047215  Lock_time: 0.000311 Rows_sent: 0  Rows_examined: 125693
+use esolutio_baneasa;
+SET timestamp=1748782335;
+SELECT * from `zen_tickets` 
+                WHERE `user_id` = '12677' AND
+                `status` = 2 AND DATE(`time_left`) IS NOT NULL
+                LIMIT 1;
+# Time: 2025-06-01T12:52:15.410031Z
+# User@Host: esolutio_baneasa[esolutio_baneasa] @ localhost []  Id:    10
+# Query_time: 0.016647  Lock_time: 0.000562 Rows_sent: 1  Rows_examined: 16890
+SET timestamp=1748782335;
+SELECT * from `zen_users` WHERE `user_id` = '12677' LIMIT 1;
+# Time: 2025-06-01T12:52:15.909624Z
+# User@Host: esolutio_baneasa[esolutio_baneasa] @ localhost []  Id:    18
+# Query_time: 0.041486  Lock_time: 0.000139 Rows_sent: 0  Rows_examined: 125693
+SET timestamp=1748782335;
+SELECT * from `zen_tickets` 
+                WHERE `user_id` = '15540' AND
+                `status` = 2 AND DATE(`time_left`) IS NOT NULL
+                LIMIT 1;
+# Time: 2025-06-01T12:52:15.912666Z
+# User@Host: esolutio_baneasa[esolutio_baneasa] @ localhost []  Id:    18
+# Query_time: 0.002888  Lock_time: 0.000196 Rows_sent: 1  Rows_examined: 3660
+SET timestamp=1748782335;
+SELECT * from `zen_users` WHERE `user_id` = '15540' LIMIT 1;
+# Time: 2025-06-01T12:52:58.953390Z
+# User@Host: esolutio_baneasa[esolutio_baneasa] @ localhost []  Id:    48
+# Query_time: 0.039458  Lock_time: 0.000131 Rows_sent: 0  Rows_examined: 125693
+SET timestamp=1748782378;
+SELECT * from `zen_tickets` 
+                WHERE `user_id` = '133475' AND
+                `status` = 2 AND DATE(`time_left`) IS NOT NULL
+                LIMIT 1;
+# Time: 2025-06-01T12:52:59.649183Z
+# User@Host: esolutio_baneasa[esolutio_baneasa] @ localhost []  Id:    63
+# Query_time: 0.039264  Lock_time: 0.000134 Rows_sent: 0  Rows_examined: 125693
+SET timestamp=1748782379;
+SELECT * from `zen_tickets` 
+                WHERE `user_id` = '98006' AND
+                `status` = 2 AND DATE(`time_left`) IS NOT NULL
+                LIMIT 1;
+# Time: 2025-06-01T12:52:59.657499Z
+# User@Host: esolutio_baneasa[esolutio_baneasa] @ localhost []  Id:    63
+# Query_time: 0.008074  Lock_time: 0.000165 Rows_sent: 1  Rows_examined: 9888
+SET timestamp=1748782379;
+SELECT * from `zen_users` WHERE `user_id` = '98006' LIMIT 1;
+# Time: 2025-06-01T12:53:04.683478Z
+# User@Host: esolutio_baneasa[esolutio_baneasa] @ localhost []  Id:    83
+# Query_time: 0.001679  Lock_time: 0.001352 Rows_sent: 1  Rows_examined: 159
+SET timestamp=1748782384;
+SELECT *
+				FROM `merchant`
+				WHERE `cif` = 'ro11588780'
+				LIMIT 1;
+# Time: 2025-06-01T12:53:05.691602Z
+# User@Host: esolutio_baneasa[esolutio_baneasa] @ localhost []  Id:    89
+# Query_time: 0.039653  Lock_time: 0.000112 Rows_sent: 0  Rows_examined: 125693
+SET timestamp=1748782385;
+SELECT * from `zen_tickets` 
+                WHERE `user_id` = '38452' AND
+                `status` = 2 AND DATE(`time_left`) IS NOT NULL
+                LIMIT 1;
+# Time: 2025-06-01T12:53:05.693746Z
+# User@Host: esolutio_baneasa[esolutio_baneasa] @ localhost []  Id:    89
+# Query_time: 0.001996  Lock_time: 0.000230 Rows_sent: 1  Rows_examined: 2302
+SET timestamp=1748782385;
+SELECT * from `zen_users` WHERE `user_id` = '38452' LIMIT 1;
+# Time: 2025-06-01T12:53:08.103312Z
+# User@Host: esolutio_baneasa[esolutio_baneasa] @ localhost []  Id:    95
+# Query_time: 0.000737  Lock_time: 0.000298 Rows_sent: 1  Rows_examined: 307
+SET timestamp=1748782388;
+SELECT *
+				FROM `merchant`
+				WHERE `cif` = 'ro31481850'
+				LIMIT 1;
+# Time: 2025-06-01T12:53:15.733952Z
+# User@Host: esolutio_baneasa[esolutio_baneasa] @ localhost []  Id:   103
+# Query_time: 0.038776  Lock_time: 0.000104 Rows_sent: 0  Rows_examined: 125693
+SET timestamp=1748782395;
+SELECT * from `zen_tickets` 
+                WHERE `user_id` = '77871' AND
+                `status` = 2 AND DATE(`time_left`) IS NOT NULL
+                LIMIT 1;
+# Time: 2025-06-01T12:53:15.734790Z
+# User@Host: esolutio_baneasa[esolutio_baneasa] @ localhost []  Id:   103
+# Query_time: 0.000692  Lock_time: 0.000164 Rows_sent: 1  Rows_examined: 624
+SET timestamp=1748782395;
+SELECT * from `zen_users` WHERE `user_id` = '77871' LIMIT 1;
+# Time: 2025-06-01T12:53:16.408105Z
+# User@Host: esolutio_baneasa[esolutio_baneasa] @ localhost []  Id:   125
+# Query_time: 0.038215  Lock_time: 0.000105 Rows_sent: 0  Rows_examined: 125693
+SET timestamp=1748782396;
+SELECT * from `zen_tickets` 
+                WHERE `user_id` = '136660' AND
+                `status` = 2 AND DATE(`time_left`) IS NOT NULL

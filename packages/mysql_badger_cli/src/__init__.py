@@ -1,0 +1,3 @@
+"""
+MySQL Badger CLI package
+""" 

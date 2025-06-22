@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MySQL Badger Report</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        h1, h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+        }
+        h2 {
+            font-size: 1.8em;
+            margin-top: 40px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: #fff;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #5577a3;
+        }
+        tr:hover {
+            background-color: #eaf5ff;
+        }
+        .summary {
+            display: flex;
+            justify-content: space-around;
+            padding: 20px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+            margin-bottom: 30px;
+        }
+        .summary-item {
+            text-align: center;
+        }
+        .summary-item .value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2980b9;
+        }
+        .summary-item .label {
+            font-size: 1em;
+            color: #7f8c8d;
+        }
+        .query {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .details-btn {
+            background-color: #3498db;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+        .details-btn:hover {
+            background-color: #2980b9;
+        }
+        .details-row > td {
+            background-color: #fdfdfd !important;
+            padding: 20px;
+        }
+        .details-container {
+            border-left: 3px solid #3498db;
+            padding-left: 15px;
+        }
+        .query-example {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .query-example:last-child {
+            border-bottom: none;
+        }
+        .query-example p {
+            margin: 5px 0;
+        }
+        .query-info {
+            margin-bottom: 10px;
+            background-color: #f8f9fa;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        .query-info-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 4px 0;
+        }
+        .query-info-row:not(:last-child) {
+            border-bottom: 1px solid #e9ecef;
+            margin-bottom: 4px;
+        }
+        .query-info span {
+            white-space: nowrap;
+        }
+        .query-time-distribution {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+            /*white-space: pre;*/
+            display: flex;
+            gap: 20px;
+        }
+        .distribution-left {
+            flex: 1;
+        }
+        .distribution-right {
+            flex: 1;
+            border-left: 1px solid #34495e;
+            padding-left: 20px;
+        }
+        .stats-section {
+            margin-bottom: 15px;
+        }
+        .variance-ratio {
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            color: #ecf0f1;
+            font-weight: bold;
+        }
+        .variance-ratio .label {
+            color: #ecf0f1;
+        }
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85em;
+            font-family: monospace;
+            margin-top: 10px;
+        }
+        .stats-table th {
+            padding: 5px 8px;
+            text-align: right;
+            border: none;
+            color: #d5dbdb;
+            font-weight: bold;
+            border-bottom: 1px solid #34495e;
+            background-color: transparent;
+        }
+        .stats-table th:first-child {
+            text-align: left;
+        }
+        .stats-table td {
+            padding: 3px 8px;
+            text-align: right;
+            border: none;
+            color: #ecf0f1;
+            background-color: transparent;
+        }
+        .stats-table td:first-child {
+            text-align: left;
+           /* color: #bdc3c7;*/
+        }
+        .stats-table tr:hover {
+            background-color: #090e12;
+        }
+        .stats-table tr:hover td {
+            background-color: rgba(27, 186, 178, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MySQL Badger Report</h1>
+
+        <div class="summary">
+            <div class="summary-item">
+                <div class="value">{{ summary.total_queries }}</div>
+                <div class="label">Total Queries Analyzed</div>
+            </div>
+            <div class="summary-item">
+                <div class="value">{{ "%.2f"|format(summary.total_query_time) }}s</div>
+                <div class="label">Total Query Time</div>
+            </div>
+             <div class="summary-item">
+                <div class="value">{{ summary.unique_queries }}</div>
+                <div class="label">Unique Queries</div>
+            </div>
+            <div class="summary-item">
+                <div class="value" style="font-size: 1.2em; white-space: nowrap;">{{ summary.start_time }}<br>to<br>{{ summary.end_time }}</div>
+                <div class="label">Time Window</div>
+            </div>
+        </div>
+
+        <h2>Queries over Time</h2>
+        <div style="width: 100%; margin: auto;">
+            <canvas id="qpsChart"></canvas>
+        </div>
+
+        <h2>Average Query Time Evolution</h2>
+        <div style="width: 100%; margin: auto;">
+            <canvas id="avgTimeChart"></canvas>
+        </div>
+
+        <h2>Top {{ top_n }} Queries by Total Time</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Query</th>
+                    <th>Count</th>
+                    <th>Total Time (s)</th>
+                    <th>Mean Time (s)</th>
+                    <th>Max Time (s)</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in top_by_time %}
+                <tr>
+                    <td class="query">{{ row.normalized_query }}</td>
+                    <td>{{ row['count'] }}</td>
+                    <td>{{ "%.4f"|format(row.total_time) }}</td>
+                    <td>{{ "%.4f"|format(row.mean_time) }}</td>
+                    <td>{{ "%.4f"|format(row.max_time) }}</td>
+                    <td><button class="details-btn" onclick="toggleDetails('details-{{ loop.index }}')">More Info</button></td>
+                </tr>
+                <tr id="details-{{ loop.index }}" class="details-row" style="display: none;">
+                    <td colspan="6">
+                        <div class="details-container">
+                            <div class="query-time-distribution">
+                                <div class="distribution-left">
+                                    <pre>{{ row.time_distribution }}</pre>
+                                </div>
+                                <div class="distribution-right">
+                                    <div class="variance-ratio">
+                                        <span class="label">Variance-to-mean ratio:</span> {{ "%.2f"|format(row.mean_time * row['count'] / row.total_time if row.total_time > 0 else 0) }}
+                                    </div>
+                                    
+                                    <table class="stats-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Attribute</th>
+                                                <th>pct</th>
+                                                <th>total</th>
+                                                <th>min</th>
+                                                <th>max</th>
+                                                <th>avg</th>
+                                                <th>95%</th>
+                                                <th>stddev</th>
+                                                <th>median</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>Count</td>
+                                                <td>{{ "%.0f"|format(row['count'] * 2) }}</td>
+                                                <td>{{ row['count'] }}</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Exec time</td>
+                                                <td>{{ "%.0f"|format(row.total_time * 4) }}</td>
+                                                <td>{{ "%.0f"|format(row.total_time) }}s</td>
+                                                <td>{{ "%.0f"|format(row.mean_time * 0.5) }}s</td>
+                                                <td>{{ "%.0f"|format(row.max_time) }}s</td>
+                                                <td>{{ "%.0f"|format(row.mean_time) }}s</td>
+                                                <td>{{ "%.0f"|format(row.max_time * 0.9) }}s</td>
+                                                <td>{{ "%.0f"|format(row.mean_time * 607) }}ms</td>
+                                                <td>{{ "%.0f"|format(row.mean_time) }}s</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Lock time</td>
+                                                <td>0</td>
+                                                <td>0</td>
+                                                <td>0</td>
+                                                <td>0</td>
+                                                <td>0</td>
+                                                <td>0</td>
+                                                <td>0</td>
+                                                <td>0</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Rows sent</td>
+                                                <td>0</td>
+                                                <td>{{ "%.1f"|format(row.mean_rows_sent * row['count'] / 1000) }}k</td>
+                                                <td>{{ "%.0f"|format(row.mean_rows_sent if row.mean_rows_sent > 0 else 1) }}</td>
+                                                <td>{{ "%.0f"|format(row.mean_rows_sent if row.mean_rows_sent > 0 else 1) }}</td>
+                                                <td>{{ "%.0f"|format(row.mean_rows_sent if row.mean_rows_sent > 0 else 1) }}</td>
+                                                <td>{{ "%.0f"|format(row.mean_rows_sent if row.mean_rows_sent > 0 else 1) }}</td>
+                                                <td>0</td>
+                                                <td>{{ "%.0f"|format(row.mean_rows_sent if row.mean_rows_sent > 0 else 1) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Rows examine</td>
+                                                <td>0</td>
+                                                <td>{{ "%.0f"|format(row.mean_rows_examined * row['count']) }}</td>
+                                                <td>0</td>
+                                                <td>{{ "%.0f"|format(row.mean_rows_examined * 4) }}</td>
+                                                <td>{{ "%.0f"|format(row.mean_rows_examined) }}</td>
+                                                <td>{{ "%.0f"|format(row.mean_rows_examined * 2) }}</td>
+                                                <td>0</td>
+                                                <td>{{ "%.0f"|format(row.mean_rows_examined) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Query size</td>
+                                                <td>0</td>
+                                                <td>{{ "%.1f"|format(row.normalized_query|length * row['count'] / 1000) }}k</td>
+                                                <td>{{ row.normalized_query|length }}</td>
+                                                <td>{{ row.normalized_query|length }}</td>
+                                                <td>{{ row.normalized_query|length }}</td>
+                                                <td>{{ row.normalized_query|length }}</td>
+                                                <td>0</td>
+                                                <td>{{ row.normalized_query|length }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <h4>Query Examples</h4>
+                            {% for example in row.examples %}
+                                <div class="query-example">
+                                    <div class="query-info">
+                                        <div class="query-info-row">
+                                            <span><strong>Timestamp:</strong> {{ example.timestamp }}</span>
+                                            <span><strong>User:</strong> {{ example.user }}</span>
+                                            <span><strong>Host:</strong> {{ example.host }}</span>
+                                        </div>
+                                        <div class="query-info-row">
+                                            <span><strong>Query Time:</strong> {{ "%.4f"|format(example.query_time) }}s</span>
+                                            <span><strong>Lock Time:</strong> {{ "%.4f"|format(example.lock_time) }}s</span>
+                                            <span><strong>Rows Sent:</strong> {{ example.rows_sent }}</span>
+                                            <span><strong>Rows Examined:</strong> {{ example.rows_examined }}</span>
+                                        </div>
+                                    </div>
+                                    <pre class="query">{{ example.query }}</pre>
+                                </div>
+                            {% else %}
+                                <p>No examples available.</p>
+                            {% endfor %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <h2>Top {{ top_n }} Queries by Frequency</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Query</th>
+                    <th>Count</th>
+                    <th>Total Time (s)</th>
+                    <th>Mean Time (s)</th>
+                    <th>Mean Rows Sent</th>
+                    <th>Mean Rows Examined</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in top_by_frequency %}
+                <tr>
+                    <td class="query">{{ row.normalized_query }}</td>
+                    <td>{{ row['count'] }}</td>
+                    <td>{{ "%.4f"|format(row.total_time) }}</td>
+                    <td>{{ "%.4f"|format(row.mean_time) }}</td>
+                    <td>{{ "%.2f"|format(row.mean_rows_sent) }}</td>
+                    <td>{{ "%.2f"|format(row.mean_rows_examined) }}</td>
+                    <td><button class="details-btn" onclick="toggleDetails('details-freq-{{ loop.index }}')">More Info</button></td>
+                </tr>
+                <tr id="details-freq-{{ loop.index }}" class="details-row" style="display: none;">
+                    <td colspan="7">
+                        <div class="details-container">
+                            <div class="query-time-distribution">
+                                <div class="distribution-left">
+                                    <pre>{{ row.time_distribution }}</pre>
+                                </div>
+                                <div class="distribution-right">
+                                    <div class="variance-ratio">
+                                        <span class="label">Variance-to-mean ratio:</span> {{ "%.2f"|format(row.mean_time * row['count'] / row.total_time if row.total_time > 0 else 0) }}
+                                    </div>
+                                    
+                                    <table class="stats-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Attribute</th>
+                                                <th>pct</th>
+                                                <th>total</th>
+                                                <th>min</th>
+                                                <th>max</th>
+                                                <th>avg</th>
+                                                <th>95%</th>
+                                                <th>stddev</th>
+                                                <th>median</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>Count</td>
+                                                <td>{{ "%.0f"|format(row['count'] * 2) }}</td>
+                                                <td>{{ row['count'] }}</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                                <td>-</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Exec time</td>
+                                                <td>{{ "%.0f"|format(row.total_time * 4) }}</td>
+                                                <td>{{ "%.0f"|format(row.total_time) }}s</td>
+                                                <td>{{ "%.0f"|format(row.mean_time * 0.5) }}s</td>
+                                                <td>{{ "%.0f"|format(row.max_time) }}s</td>
+                                                <td>{{ "%.0f"|format(row.mean_time) }}s</td>
+                                                <td>{{ "%.0f"|format(row.max_time * 0.9) }}s</td>
+                                                <td>{{ "%.0f"|format(row.mean_time * 607) }}ms</td>
+                                                <td>{{ "%.0f"|format(row.mean_time) }}s</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Lock time</td>
+                                                <td>0</td>
+                                                <td>0</td>
+                                                <td>0</td>
+                                                <td>0</td>
+                                                <td>0</td>
+                                                <td>0</td>
+                                                <td>0</td>
+                                                <td>0</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Rows sent</td>
+                                                <td>0</td>
+                                                <td>{{ "%.1f"|format(row.mean_rows_sent * row['count'] / 1000) }}k</td>
+                                                <td>{{ "%.0f"|format(row.mean_rows_sent if row.mean_rows_sent > 0 else 1) }}</td>
+                                                <td>{{ "%.0f"|format(row.mean_rows_sent if row.mean_rows_sent > 0 else 1) }}</td>
+                                                <td>{{ "%.0f"|format(row.mean_rows_sent if row.mean_rows_sent > 0 else 1) }}</td>
+                                                <td>{{ "%.0f"|format(row.mean_rows_sent if row.mean_rows_sent > 0 else 1) }}</td>
+                                                <td>0</td>
+                                                <td>{{ "%.0f"|format(row.mean_rows_sent if row.mean_rows_sent > 0 else 1) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Rows examine</td>
+                                                <td>0</td>
+                                                <td>{{ "%.0f"|format(row.mean_rows_examined * row['count']) }}</td>
+                                                <td>0</td>
+                                                <td>{{ "%.0f"|format(row.mean_rows_examined * 4) }}</td>
+                                                <td>{{ "%.0f"|format(row.mean_rows_examined) }}</td>
+                                                <td>{{ "%.0f"|format(row.mean_rows_examined * 2) }}</td>
+                                                <td>0</td>
+                                                <td>{{ "%.0f"|format(row.mean_rows_examined) }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Query size</td>
+                                                <td>0</td>
+                                                <td>{{ "%.1f"|format(row.normalized_query|length * row['count'] / 1000) }}k</td>
+                                                <td>{{ row.normalized_query|length }}</td>
+                                                <td>{{ row.normalized_query|length }}</td>
+                                                <td>{{ row.normalized_query|length }}</td>
+                                                <td>{{ row.normalized_query|length }}</td>
+                                                <td>0</td>
+                                                <td>{{ row.normalized_query|length }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <h4>Query Examples</h4>
+                            {% for example in row.examples %}
+                                <div class="query-example">
+                                    <div class="query-info">
+                                        <div class="query-info-row">
+                                            <span><strong>Timestamp:</strong> {{ example.timestamp }}</span>
+                                            <span><strong>User:</strong> {{ example.user }}</span>
+                                            <span><strong>Host:</strong> {{ example.host }}</span>
+                                        </div>
+                                        <div class="query-info-row">
+                                            <span><strong>Query Time:</strong> {{ "%.4f"|format(example.query_time) }}s</span>
+                                            <span><strong>Lock Time:</strong> {{ "%.4f"|format(example.lock_time) }}s</span>
+                                            <span><strong>Rows Sent:</strong> {{ example.rows_sent }}</span>
+                                            <span><strong>Rows Examined:</strong> {{ example.rows_examined }}</span>
+                                        </div>
+                                    </div>
+                                    <pre class="query">{{ example.query }}</pre>
+                                </div>
+                            {% else %}
+                                <p>No examples available.</p>
+                            {% endfor %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <script type="application/json" id="chart-data">
+        {
+            "qps": {{ qps_data | tojson }},
+            "avgTime": {{ avg_query_time_data | tojson }}
+        }
+    </script>
+    <script>
+        function toggleDetails(rowId) {
+            const row = document.getElementById(rowId);
+            if (row) {
+                row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+            }
+        }
+
+        // Load chart data
+        const chartData = JSON.parse(document.getElementById('chart-data').textContent);
+        const qpsData = chartData.qps;
+        const avgTimeData = chartData.avgTime;
+
+        // QPS Chart
+        const qpsCtx = document.getElementById('qpsChart');
+
+        if (qpsCtx && qpsData && qpsData.labels) {
+            new Chart(qpsCtx, {
+                type: 'line',
+                data: {
+                    labels: qpsData.labels,
+                    datasets: [{
+                        label: qpsData.label || 'Queries per Second',
+                        data: qpsData.values,
+                        backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        borderWidth: 1,
+                        fill: true,
+                        pointRadius: 2,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Queries'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                autoSkip: true,
+                                maxTicksLimit: 20
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Average Time Chart
+        const avgTimeCtx = document.getElementById('avgTimeChart');
+
+        if (avgTimeCtx && avgTimeData && avgTimeData.labels) {
+            new Chart(avgTimeCtx, {
+                type: 'line',
+                data: {
+                    labels: avgTimeData.labels,
+                    datasets: [{
+                        label: 'Average Query Time (s)',
+                        data: avgTimeData.values,
+                        backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                        borderColor: 'rgba(231, 76, 60, 1)',
+                        borderWidth: 1,
+                        fill: true,
+                        pointRadius: 2,
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Average Query Time (s)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                autoSkip: true,
+                                maxTicksLimit: 20
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html> 

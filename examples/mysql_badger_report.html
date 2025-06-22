@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MySQL Badger Report</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        h1, h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+        }
+        h2 {
+            font-size: 1.8em;
+            margin-top: 40px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: #fff;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #eaf5ff;
+        }
+        .summary {
+            display: flex;
+            justify-content: space-around;
+            padding: 20px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+            margin-bottom: 30px;
+        }
+        .summary-item {
+            text-align: center;
+        }
+        .summary-item .value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2980b9;
+        }
+        .summary-item .label {
+            font-size: 1em;
+            color: #7f8c8d;
+        }
+        .query {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MySQL Badger Report</h1>
+
+        <div class="summary">
+            <div class="summary-item">
+                <div class="value">3</div>
+                <div class="label">Total Queries Analyzed</div>
+            </div>
+            <div class="summary-item">
+                <div class="value">4.97s</div>
+                <div class="label">Total Query Time</div>
+            </div>
+             <div class="summary-item">
+                <div class="value">2</div>
+                <div class="label">Unique Queries</div>
+            </div>
+        </div>
+
+        <h2>Top 10 Queries by Total Time</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Query</th>
+                    <th>Count</th>
+                    <th>Total Time (s)</th>
+                    <th>Mean Time (s)</th>
+                    <th>Max Time (s)</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+                <tr>
+                    <td class="query">select * from users u join orders o on u.id = o.user_id where u.signup_date < 'S';</td>
+                    <td>1</td>
+                    <td>2.5000</td>
+                    <td>2.5000</td>
+                    <td>2.5000</td>
+                </tr>
+                
+                <tr>
+                    <td class="query">select * from products where category = 'S' and price > N;</td>
+                    <td>2</td>
+                    <td>2.4690</td>
+                    <td>1.2345</td>
+                    <td>1.2350</td>
+                </tr>
+                
+            </tbody>
+        </table>
+
+        <h2>Top 10 Queries by Frequency</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Query</th>
+                    <th>Count</th>
+                    <th>Total Time (s)</th>
+                    <th>Mean Time (s)</th>
+                    <th>Mean Rows Sent</th>
+                    <th>Mean Rows Examined</th>
+                </tr>
+            </thead>
+            <tbody>
+                
+                <tr>
+                    <td class="query">select * from products where category = 'S' and price > N;</td>
+                    <td>2</td>
+                    <td>2.4690</td>
+                    <td>1.2345</td>
+                    <td>10.00</td>
+                    <td>20000.00</td>
+                </tr>
+                
+                <tr>
+                    <td class="query">select * from users u join orders o on u.id = o.user_id where u.signup_date < 'S';</td>
+                    <td>1</td>
+                    <td>2.5000</td>
+                    <td>2.5000</td>
+                    <td>5.00</td>
+                    <td>50000.00</td>
+                </tr>
+                
+            </tbody>
+        </table>
+    </div>
+</body>
+</html> 

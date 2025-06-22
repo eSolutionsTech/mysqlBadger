@@ -1,0 +1,15 @@
+# Time: 2024-06-15T10:00:00.123456Z
+# User@Host: root[root] @ localhost []
+# Query_time: 1.234  Lock_time: 0.001 Rows_sent: 10  Rows_examined: 20000
+SET timestamp=1718452800;
+SELECT * FROM products WHERE category = 'fashion' AND price > 1000;
+# Time: 2024-06-15T10:01:00.654321Z
+# User@Host: root[root] @ localhost []
+# Query_time: 2.500  Lock_time: 0.002 Rows_sent: 5  Rows_examined: 50000
+SET timestamp=1718452860;
+SELECT * FROM users u JOIN orders o ON u.id = o.user_id WHERE u.signup_date < '2023-01-01';
+# Time: 2024-06-15T10:02:00.111111Z
+# User@Host: app[app] @ db.example.com []
+# Query_time: 1.235  Lock_time: 0.001 Rows_sent: 10  Rows_examined: 20000
+SET timestamp=1718452920;
+SELECT * FROM products WHERE category = 'fashion' AND price > 1000; 
