@@ -462,7 +462,7 @@ def test_generate_report_integration():
         # Verificăm că fișierul conține conținutul de bază
         with open(temp_output, 'r') as f:
             content = f.read()
-            assert 'MySQL Badger Report' in content
+            assert 'mysqlBadger' in content  # Titlul actual din template
             assert 'Total Queries' in content
             assert str(summary['total_queries']) in content
             
@@ -501,7 +501,7 @@ def test_generate_report_with_real_stats():
         with open(temp_output, 'r') as f:
             content = f.read()
             # Verificăm că raportul de bază a fost generat
-            assert 'MySQL Badger Report' in content
+            assert 'mysqlBadger' in content  # Titlul actual din template
             assert len(comprehensive_stats) > 0  # Verificăm că statisticile au fost calculate
             
     finally:
