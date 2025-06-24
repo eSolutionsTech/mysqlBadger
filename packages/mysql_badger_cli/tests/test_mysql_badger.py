@@ -422,9 +422,8 @@ def test_parse_log_by_block_empty_file():
 
 def test_parse_log_by_block_nonexistent_file():
     """Testează parsing-ul unui fișier inexistent"""
-    # Funcția actuală face exit(1) în loc să returneze o listă goală
-    # Testăm că se aruncă SystemExit
-    with pytest.raises(SystemExit):
+    # Funcția actuală aruncă FileNotFoundError în loc să facă exit(1)
+    with pytest.raises(FileNotFoundError):
         list(parse_log_by_block('nonexistent_file.log'))
 
 def test_generate_report_integration():
@@ -550,4 +549,44 @@ def test_full_pipeline_integration():
     finally:
         os.unlink(temp_log)
         if os.path.exists(temp_output):
-            os.unlink(temp_output) 
+            os.unlink(temp_output)
+
+def test_main_function_file_not_found():
+    """Testează că funcția main gestionează corect erorile de fișier inexistent"""
+    import sys
+    from io import StringIO
+    
+    # Salvăm stdout original
+    original_stdout = sys.stdout
+    original_stderr = sys.stderr
+    
+    try:
+        # Redirectăm stdout pentru a captura output-ul
+        captured_output = StringIO()
+        sys.stdout = captured_output
+        sys.stderr = captured_output
+        
+        # Simulăm apelul funcției main cu un fișier inexistent
+        from src.mysql_badger import main
+        import sys as sys_module
+        
+        # Salvăm sys.argv original
+        original_argv = sys_module.argv
+        
+        try:
+            sys_module.argv = ['mysql-badger', '-f', 'nonexistent_file.log']
+            main()
+        except SystemExit:
+            pass  # Așteptăm SystemExit de la sys.exit(1)
+        finally:
+            # Restaurăm sys.argv
+            sys_module.argv = original_argv
+        
+        # Verificăm că mesajul de eroare a fost afișat
+        output = captured_output.getvalue()
+        assert "Error: File not found at nonexistent_file.log" in output
+        
+    finally:
+        # Restaurăm stdout și stderr
+        sys.stdout = original_stdout
+        sys.stderr = original_stderr 
