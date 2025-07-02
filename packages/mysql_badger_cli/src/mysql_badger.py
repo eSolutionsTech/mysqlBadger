@@ -5,6 +5,7 @@ from jinja2 import Environment, FileSystemLoader
 from datetime import datetime
 import os
 import numpy as np
+import sys
 
 class QueryStatistics:
     """Clasa pentru calcularea statisticilor reale - nu mai fabricăm!"""
@@ -319,91 +320,99 @@ def main():
 
     print(f"Analysing {args.file}...")
 
-    all_queries_data = []
-    for block in parse_log_by_block(args.file):
-        data = extract_query_data(block)
-        if data:
-            all_queries_data.append(data)
-    
-    if not all_queries_data:
-        print("No queries found in the log file. Exiting.")
-        return
-
-    df = pd.DataFrame(all_queries_data)
-    df['timestamp'] = pd.to_datetime(df['timestamp'])
-    df['normalized_query'] = df['query'].apply(normalize_query)
-
-    # Calculate QPS
-    qps_df = df.set_index('timestamp')
-    
-    duration_seconds = 0
-    if not qps_df.empty:
-        duration_seconds = (qps_df.index.max() - qps_df.index.min()).total_seconds()
-    
-    resample_period = 's' # default to seconds (lowercase to avoid deprecation warning)
-    resample_label = 'Queries per Second'
-    if duration_seconds > 300: # Switch to minutes if log spans more than 5 minutes
-        resample_period = 'min' # use minutes
-        resample_label = 'Queries per Minute'
-
-    qps_data = {'labels': [], 'values': [], 'label': resample_label}
-    if not qps_df.empty:
-        qps = qps_df.resample(resample_period).size()
-        qps_data['labels'] = qps.index.strftime('%Y-%m-%d %H:%M:%S').tolist()
-        qps_data['values'] = qps.values.tolist()
-
-    # Calculate Average Query Time over time
-    avg_query_time_data = {'labels': [], 'values': [], 'label': f'Average Query Time'}
-    if not qps_df.empty:
-        avg_time = qps_df['query_time'].resample(resample_period).mean().fillna(0)
-        avg_query_time_data['labels'] = avg_time.index.strftime('%Y-%m-%d %H:%M:%S').tolist()
-        avg_query_time_data['values'] = avg_time.values.tolist()
-
-    # Prepare summary data
-    summary = {
-        'total_queries': len(df),
-        'total_query_time': df['query_time'].sum(),
-        'unique_queries': len(df['normalized_query'].unique()),
-        'start_time': df['timestamp'].min().strftime('%Y-%m-%d %H:%M:%S'),
-        'end_time': df['timestamp'].max().strftime('%Y-%m-%d %H:%M:%S')
-    }
-
-    # Calculate comprehensive statistics using our new functions
-    comprehensive_stats = calculate_comprehensive_stats(df)
-    
-    # Convert to DataFrame for easier manipulation
-    stats_df = pd.DataFrame(comprehensive_stats)
-
-    # Top N by total time
-    top_by_time = stats_df.sort_values(by='total_time', ascending=False).head(args.top_n)
-    
-    def get_query_examples(normalized_query):
-        query_df = df[df['normalized_query'] == normalized_query].sort_values(by='timestamp')
+    try:
+        all_queries_data = []
+        for block in parse_log_by_block(args.file):
+            data = extract_query_data(block)
+            if data:
+                all_queries_data.append(data)
         
-        count = len(query_df)
-        if count == 0:
-            return []
+        if not all_queries_data:
+            print("No queries found in the log file. Exiting.")
+            return
+
+        df = pd.DataFrame(all_queries_data)
+        df['timestamp'] = pd.to_datetime(df['timestamp'])
+        df['normalized_query'] = df['query'].apply(normalize_query)
+
+        # Calculate QPS
+        qps_df = df.set_index('timestamp')
         
-        indices_to_pick = [0]
-        if count > 1:
-            indices_to_pick.append(count - 1)
-        if count > 2:
-            indices_to_pick.insert(1, count // 2)
+        duration_seconds = 0
+        if not qps_df.empty:
+            duration_seconds = (qps_df.index.max() - qps_df.index.min()).total_seconds()
+        
+        resample_period = 's' # default to seconds (lowercase to avoid deprecation warning)
+        resample_label = 'Queries per Second'
+        if duration_seconds > 300: # Switch to minutes if log spans more than 5 minutes
+            resample_period = 'min' # use minutes
+            resample_label = 'Queries per Minute'
+
+        qps_data = {'labels': [], 'values': [], 'label': resample_label}
+        if not qps_df.empty:
+            qps = qps_df.resample(resample_period).size()
+            qps_data['labels'] = qps.index.strftime('%Y-%m-%d %H:%M:%S').tolist()
+            qps_data['values'] = qps.values.tolist()
+
+        # Calculate Average Query Time over time
+        avg_query_time_data = {'labels': [], 'values': [], 'label': f'Average Query Time'}
+        if not qps_df.empty:
+            avg_time = qps_df['query_time'].resample(resample_period).mean().fillna(0)
+            avg_query_time_data['labels'] = avg_time.index.strftime('%Y-%m-%d %H:%M:%S').tolist()
+            avg_query_time_data['values'] = avg_time.values.tolist()
+
+        # Prepare summary data
+        summary = {
+            'total_queries': len(df),
+            'total_query_time': df['query_time'].sum(),
+            'unique_queries': len(df['normalized_query'].unique()),
+            'start_time': df['timestamp'].min().strftime('%Y-%m-%d %H:%M:%S'),
+            'end_time': df['timestamp'].max().strftime('%Y-%m-%d %H:%M:%S')
+        }
+
+        # Calculate comprehensive statistics using our new functions
+        comprehensive_stats = calculate_comprehensive_stats(df)
+        
+        # Convert to DataFrame for easier manipulation
+        stats_df = pd.DataFrame(comprehensive_stats)
+
+        # Top N by total time
+        top_by_time = stats_df.sort_values(by='total_time', ascending=False).head(args.top_n)
+        
+        def get_query_examples(normalized_query):
+            query_df = df[df['normalized_query'] == normalized_query].sort_values(by='timestamp')
             
-        # Ensure unique indices if count is small
-        indices_to_pick = sorted(list(set(indices_to_pick)))
+            count = len(query_df)
+            if count == 0:
+                return []
+            
+            indices_to_pick = [0]
+            if count > 1:
+                indices_to_pick.append(count - 1)
+            if count > 2:
+                indices_to_pick.insert(1, count // 2)
+                
+            # Ensure unique indices if count is small
+            indices_to_pick = sorted(list(set(indices_to_pick)))
 
-        examples = query_df.iloc[indices_to_pick].copy()
-        examples['timestamp'] = examples['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
-        return examples.to_dict(orient='records')
+            examples = query_df.iloc[indices_to_pick].copy()
+            examples['timestamp'] = examples['timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
+            return examples.to_dict(orient='records')
 
-    top_by_time['examples'] = top_by_time['normalized_query'].apply(get_query_examples)
+        top_by_time['examples'] = top_by_time['normalized_query'].apply(get_query_examples)
 
-    # Top N by frequency
-    top_by_frequency = stats_df.sort_values(by='count', ascending=False).head(args.top_n)
-    top_by_frequency['examples'] = top_by_frequency['normalized_query'].apply(get_query_examples)
+        # Top N by frequency
+        top_by_frequency = stats_df.sort_values(by='count', ascending=False).head(args.top_n)
+        top_by_frequency['examples'] = top_by_frequency['normalized_query'].apply(get_query_examples)
 
-    generate_report(df, summary, top_by_time, top_by_frequency, qps_data, avg_query_time_data, args.output, args.file)
+        generate_report(df, summary, top_by_time, top_by_frequency, qps_data, avg_query_time_data, args.output, args.file)
+        
+    except FileNotFoundError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error: {e}")
+        sys.exit(1)
 
 def extract_query_data(block):
     """
@@ -473,11 +482,9 @@ def parse_log_by_block(log_file):
             if block:
                 yield "".join(block)
     except FileNotFoundError:
-        print(f"Error: File not found at {log_file}")
-        exit(1)
+        raise FileNotFoundError(f"Error: File not found at {log_file}")
     except Exception as e:
-        print(f"An error occurred: {e}")
-        exit(1)
+        raise Exception(f"An error occurred while reading {log_file}: {e}")
 
 if __name__ == '__main__':
     main() 
